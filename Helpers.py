@@ -35,14 +35,14 @@ def create_authenticated_http_session(client_id, client_secret) -> requests.Sess
 def get_customer_information(http_session: requests.Session, customerid):
     """
     Get customer information SBanken given by the customerid
-    
+
     Args:
         http_session (requests.Session): [description]
         customerid ([type]): [description]
-    
+
     Raises:
         RuntimeError: [description]
-    
+
     Returns:
         [type]: [description]
     """
@@ -66,10 +66,10 @@ def get_accounts(http_session: requests.Session, customerid):
     Args:
         http_session (requests.Session): [description]
         customerid ([type]): [description]
-    
+
     Raises:
         RuntimeError: [description]
-    
+
     Returns:
         [type]: [description]
     """
@@ -86,18 +86,18 @@ def get_accounts(http_session: requests.Session, customerid):
 def get_transactions_period(http_session: requests.Session, customerid, account_id, startDate, endDate):
     """
     Get all transactions from SBanken for a given time period
-    
+
     Args:
         http_session (requests.Session): [description]
         customerid (string): The customer id of the user
         account_id (string): The account id where transactions are read
         startDate (Date): From date
         endDate (Date): To date
-    
+
     Raises:
         RuntimeError: Error reading from API
-        RuntimeError: 
-            
+        RuntimeError:
+
     Returns:
         array: List of transactions
     """
@@ -123,17 +123,17 @@ def get_transactions_period(http_session: requests.Session, customerid, account_
 def get_standing_orders(http_session: requests.Session, customerid, account_id):
     """
     Get all future repeated future payments from SBanken API
-    
+
     Args:
         http_session (requests.Session): Current session
         customerid (string): Id of the customer
         account_id (string): Id of the account
-    
+
     Raises:
         RuntimeError: API error
-    
+
     Returns:
-        array: List of standing order payments being paid on date 
+        array: List of standing order payments being paid on date
     """
     # print(customerid)
     # print(account_id)
@@ -151,15 +151,15 @@ def get_standing_orders(http_session: requests.Session, customerid, account_id):
 def get_payments(http_session: requests.Session, customerid, account_id):
     """
     Get all future payments from SBanken API
-    
+
     Args:
         http_session (requests.Session): Current session
         customerid (string): ID of the customer
         account_id (string): Id of th account
-    
+
     Raises:
         RuntimeError: API error
-    
+
     Returns:
         array: List of future payments being paid on date
     """
@@ -175,13 +175,13 @@ def get_payments(http_session: requests.Session, customerid, account_id):
 def get_transactions(http_session: requests.Session, customerid, account_id, months):
     """
     Get transactions for a given number of months back up and until now
-    
+
     Args:
         http_session (requests.Session): Current session
         customerid (string): Id of the customer
         account_id (string): Id of the account
-        months (integer): Number of months back to start getting transactions. There is a limit of 12 months 
-    
+        months (integer): Number of months back to start getting transactions. There is a limit of 12 months
+
     Returns:
         arrya: List of transactions
     """
@@ -195,13 +195,13 @@ def get_transactions(http_session: requests.Session, customerid, account_id, mon
 def get_transactions_year(http_session: requests.Session, customerid, account_id, year):
     """
     Get transactions from a full year
-    
+
     Args:
         http_session (requests.Session): Current session
         customerid (string): Id of the customer
         account_id (string): Id of the account
-        year (int): The year 
-    
+        year (int): The year
+
     Returns:
         array: Transactions from jan 1st to dec 31st the given year
     """
@@ -255,10 +255,10 @@ def parseYearlessDate(stringDate, forcedYear):
 def getTransactionDate(transaction):
     """
     Extract the transaction date from an SBanken transaction
-    
+
     Args:
         transaction (object): Transaction from a transaction list
-    
+
     Returns:
         string: Transaction date in the format DD.MM.YYYY
     """
@@ -283,10 +283,10 @@ def getTransactionDate(transaction):
 def getYnabTransactionDate(transaction):
     """
     Extract transaction date from an SBanken transaction and return this in a YNAB format
-    
+
     Args:
         transaction (object): Transaction from a transaction list
-    
+
     Returns:
         string: Transaction date in the format YYYY-MM-DD
     """
@@ -300,15 +300,15 @@ def getYnabTransactionDate(transaction):
 
 def getPayee(transaction):
     """
-    Extract the Payee name from an SBanken transaction. The best guess of the Payee based on information in the 
+    Extract the Payee name from an SBanken transaction. The best guess of the Payee based on information in the
     transaction object. Where and what may be very dependant on the transaction content and type.
-    
+
     Args:
         transaction (object): Transaction from a transaction list
-    
+
     Raises:
         ValueError: Exception if unable to extract payee
-    
+
     Returns:
         string: Payee
     """
