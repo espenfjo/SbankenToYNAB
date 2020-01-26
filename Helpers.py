@@ -8,6 +8,7 @@ import pprint
 import string
 import re
 
+
 def enable_debug_logging():
     import logging
     import http.client
@@ -24,9 +25,9 @@ def create_authenticated_http_session(client_id, client_secret) -> requests.Sess
     oauth2_client = BackendApplicationClient(client_id=urllib.parse.quote(client_id))
     session = OAuth2Session(client=oauth2_client)
     session.fetch_token(
-        token_url='https://auth.sbanken.no/identityserver/connect/token',
+        token_url="https://auth.sbanken.no/identityserver/connect/token",
         client_id=urllib.parse.quote(client_id),
-        client_secret=urllib.parse.quote(client_secret)
+        client_secret=urllib.parse.quote(client_secret),
     )
     return session
 
@@ -46,8 +47,7 @@ def get_customer_information(http_session: requests.Session, customerid):
         [type]: [description]
     """
     response_object = http_session.get(
-        "https://api.sbanken.no/exec.customers/api/v1/Customers",
-        headers={'customerId': customerid}
+        "https://api.sbanken.no/exec.customers/api/v1/Customers", headers={"customerId": customerid}
     )
     print(response_object)
     print(response_object.text)
@@ -74,8 +74,7 @@ def get_accounts(http_session: requests.Session, customerid):
         [type]: [description]
     """
     response = http_session.get(
-        "https://api.sbanken.no/exec.bank/api/v1/Accounts",
-        headers={'customerId': customerid}
+        "https://api.sbanken.no/exec.bank/api/v1/Accounts", headers={"customerId": customerid}
     ).json()
 
     if not response["isError"]:
@@ -102,19 +101,24 @@ def get_transactions_period(http_session: requests.Session, customerid, account_
     Returns:
         array: List of transactions
     """
-    queryString = "https://api.sbanken.no/exec.bank/api/v1/Transactions/{}?length=1000&startDate={}&endDate={}".format(account_id,startDate.strftime("%Y-%m-%d"),endDate.strftime("%Y-%m-%d"))
-    response = http_session.get(queryString
-        , headers={'customerId': customerid}
+    queryString = "https://api.sbanken.no/exec.bank/api/v1/Transactions/{}?length=1000&startDate={}&endDate={}".format(
+        account_id, startDate.strftime("%Y-%m-%d"), endDate.strftime("%Y-%m-%d")
     )
+    response = http_session.get(queryString, headers={"customerId": customerid})
     if response.ok:
         response = response.json()
     else:
-        raise RuntimeError("Request to transactions API returned with HTTP status code {} with reason {}. Request was {}".format(response.status_code, response.reason, queryString))
+        raise RuntimeError(
+            "Request to transactions API returned with HTTP status code {} with reason {}. Request was {}".format(
+                response.status_code, response.reason, queryString
+            )
+        )
 
     if not response["isError"]:
         return response["items"]
     else:
-        raise RuntimeError("{} {}, Request was {}".format(response["errorType"], response["errorMessage"], queryString))   
+        raise RuntimeError("{} {}, Request was {}".format(response["errorType"], response["errorMessage"], queryString))
+
 
 def get_standing_orders(http_session: requests.Session, customerid, account_id):
     """
@@ -135,13 +139,14 @@ def get_standing_orders(http_session: requests.Session, customerid, account_id):
     # print(account_id)
     response = http_session.get(
         "https://api.sbanken.no/exec.bank/api/v1/StandingOrders/{}".format(account_id),
-        headers={'customerId': customerid}
+        headers={"customerId": customerid},
     ).json()
 
     if not response["isError"]:
         return response["items"]
     else:
         raise RuntimeError("{} {}".format(response["errorType"], response["errorMessage"]))
+
 
 def get_payments(http_session: requests.Session, customerid, account_id):
     """
@@ -159,15 +164,13 @@ def get_payments(http_session: requests.Session, customerid, account_id):
         array: List of future payments being paid on date
     """
     queryString = "https://api.sbanken.no/exec.bank/api/v1/Payments/{}".format(account_id)
-    response = http_session.get(
-        queryString,
-        headers={'customerId': customerid}
-    ).json()
+    response = http_session.get(queryString, headers={"customerId": customerid}).json()
 
     if not response["isError"]:
         return response["items"]
     else:
         raise RuntimeError("{} {}, Request was {}".format(response["errorType"], response["errorMessage"], queryString))
+
 
 def get_transactions(http_session: requests.Session, customerid, account_id, months):
     """
@@ -184,7 +187,7 @@ def get_transactions(http_session: requests.Session, customerid, account_id, mon
     """
     today = datetime.date.today()
     endDate = today - datetime.timedelta(0)
-    startDate = today - datetime.timedelta(30*months)
+    startDate = today - datetime.timedelta(30 * months)
 
     return get_transactions_period(http_session, customerid, account_id, startDate, endDate)
 
@@ -211,7 +214,8 @@ def get_transactions_year(http_session: requests.Session, customerid, account_id
 
     return get_transactions_period(http_session, customerid, account_id, startDate, endDate)
 
-def parseVisaDate (stringDate, substractYear=False):
+
+def parseVisaDate(stringDate, substractYear=False):
     """
     Parses text from Visa transaction, doesn't handles errors with 1 year miss
 
@@ -221,16 +225,14 @@ def parseVisaDate (stringDate, substractYear=False):
     Returns:
         date: date to be used in YNAB
     """
-    res = datetime.datetime.strptime(stringDate.split('T')[0], "%Y-%m-%d")
+    res = datetime.datetime.strptime(stringDate.split("T")[0], "%Y-%m-%d")
     if substractYear:
-        dateArray = stringDate.split('T')[0].split("-")
-        res = datetime.datetime(
-            year=(int(dateArray[0])-1)
-            , month=int(dateArray[1])
-            , day=int(dateArray[2]))
+        dateArray = stringDate.split("T")[0].split("-")
+        res = datetime.datetime(year=(int(dateArray[0]) - 1), month=int(dateArray[1]), day=int(dateArray[2]))
     return res
 
-def parseYearlessDate (stringDate, forcedYear):
+
+def parseYearlessDate(stringDate, forcedYear):
     """
     Parses text from yearless transaction. Sets year to the value given.
 
@@ -241,17 +243,14 @@ def parseYearlessDate (stringDate, forcedYear):
         date: date to be used in YNAB
     """
     res = None
-    dt = stringDate.split(' ')
-    if dt[0] == 'KORREKSJON': 
+    dt = stringDate.split(" ")
+    if dt[0] == "KORREKSJON":
         tDate = datetime.datetime.strptime(dt[2], "%d.%m")
     else:
         tDate = datetime.datetime.strptime(dt[0], "%d.%m")
-    res = datetime.datetime(
-        year=forcedYear
-        , month=tDate.month
-        , day=tDate.day
-        )
+    res = datetime.datetime(year=forcedYear, month=tDate.month, day=tDate.day)
     return res
+
 
 def getTransactionDate(transaction):
     """
@@ -263,22 +262,22 @@ def getTransactionDate(transaction):
     Returns:
         string: Transaction date in the format DD.MM.YYYY
     """
-    d = datetime.datetime.strptime(transaction['interestDate'].split('T')[0], "%Y-%m-%d")
-    code = transaction['transactionTypeCode']
-    accountingDate = datetime.datetime.strptime(transaction['accountingDate'].split('T')[0], "%Y-%m-%d")
-    if  code == 710 or code == 709:
-        d = parseYearlessDate(transaction['text'], forcedYear=d.year)
-    elif code == 714 and transaction['cardDetailsSpecified']: # Visa
-        d = parseVisaDate(stringDate=transaction['cardDetails']['purchaseDate'])
+    d = datetime.datetime.strptime(transaction["interestDate"].split("T")[0], "%Y-%m-%d")
+    code = transaction["transactionTypeCode"]
+    accountingDate = datetime.datetime.strptime(transaction["accountingDate"].split("T")[0], "%Y-%m-%d")
+    if code == 710 or code == 709:
+        d = parseYearlessDate(transaction["text"], forcedYear=d.year)
+    elif code == 714 and transaction["cardDetailsSpecified"]:  # Visa
+        d = parseVisaDate(stringDate=transaction["cardDetails"]["purchaseDate"])
     # In case transaction date (purchaseDate og date from text) is more than 300 days away from the
     # accountingDate in the future, substract 1 year from purchaseDate in order to get correct transaction date
     delta = accountingDate - d
     if delta < datetime.timedelta() and (abs(delta) > datetime.timedelta(days=300)):
-        if  code == 710 or code == 709:
-            d = parseYearlessDate(transaction['text'], forcedYear=(d.year-1))
-        elif code == 714 and transaction['cardDetailsSpecified']:
-            d = parseVisaDate(stringDate=transaction['cardDetails']['purchaseDate'], substractYear=True)
-    return d.strftime('%d.%m.%Y')
+        if code == 710 or code == 709:
+            d = parseYearlessDate(transaction["text"], forcedYear=(d.year - 1))
+        elif code == 714 and transaction["cardDetailsSpecified"]:
+            d = parseVisaDate(stringDate=transaction["cardDetails"]["purchaseDate"], substractYear=True)
+    return d.strftime("%d.%m.%Y")
 
 
 def getYnabTransactionDate(transaction):
@@ -291,12 +290,12 @@ def getYnabTransactionDate(transaction):
     Returns:
         string: Transaction date in the format YYYY-MM-DD
     """
-    if 'beneficiaryName' in transaction:
+    if "beneficiaryName" in transaction:
         d = datetime.datetime.strptime(getPaymentsDate(transaction), "%d.%m.%Y")
-        return d.strftime('%Y-%m-%d')
+        return d.strftime("%Y-%m-%d")
     else:
-        d = datetime.datetime.strptime( getTransactionDate(transaction), "%d.%m.%Y")
-        return d.strftime('%Y-%m-%d')
+        d = datetime.datetime.strptime(getTransactionDate(transaction), "%d.%m.%Y")
+        return d.strftime("%Y-%m-%d")
 
 
 def getPayee(transaction):
@@ -313,125 +312,139 @@ def getPayee(transaction):
     Returns:
         string: Payee
     """
-    res = bytes(transaction['text'].encode()).decode('utf-8','backslashreplace').capitalize()
-    if transaction['transactionTypeCode'] == 752:   # renter
-        res = 'Sbanken'
-    elif transaction['transactionTypeCode'] == 962 or (transaction['transactionType'].split(' ')[0] == 'Vipps' and transaction.get('otherAccountNumberSpecified') == False):   # Vipps straksbet.
-        res = transaction['transactionType']
-    elif transaction['transactionTypeCode'] == 709 or transaction['transactionTypeCode'] == 73:   # Varer
-        payee = transaction['text'].split(' ')
-        if payee[0] == 'KORREKSJON':
-            res = (payee[3]+ ' ' + payee[4]).capitalize()
-        elif payee[1] == 'RESERVE':
+    res = bytes(transaction["text"].encode()).decode("utf-8", "backslashreplace").capitalize()
+    if transaction["transactionTypeCode"] == 752:  # renter
+        res = "Sbanken"
+    elif transaction["transactionTypeCode"] == 962 or (
+        transaction["transactionType"].split(" ")[0] == "Vipps"
+        and transaction.get("otherAccountNumberSpecified") == False
+    ):  # Vipps straksbet.
+        res = transaction["transactionType"]
+    elif transaction["transactionTypeCode"] == 709 or transaction["transactionTypeCode"] == 73:  # Varer
+        payee = transaction["text"].split(" ")
+        if payee[0] == "KORREKSJON":
+            res = (payee[3] + " " + payee[4]).capitalize()
+        elif payee[1] == "RESERVE":
             res = "RESERVE"
         else:
-            res = (payee[1]+ ' ' + payee[2]).capitalize()
-    elif transaction['transactionTypeCode'] == 710 or transaction['transactionTypeCode'] == 73:   # Varekjøp
-        payee = transaction['text'].split(' ')
+            res = (payee[1] + " " + payee[2]).capitalize()
+    elif transaction["transactionTypeCode"] == 710 or transaction["transactionTypeCode"] == 73:  # Varekjøp
+        payee = transaction["text"].split(" ")
         # print(transaction['text'])
-        if payee[0] == 'KORREKSJON':
-            res = (payee[3]+ ' ' + payee[4]).capitalize()
-        res = (payee[1]+ ' ' + payee[2]).capitalize()
-    elif transaction['transactionTypeCode'] == 714 and transaction['cardDetailsSpecified']: #Visa vare
-        payee = transaction['cardDetails']['merchantName']
+        if payee[0] == "KORREKSJON":
+            res = (payee[3] + " " + payee[4]).capitalize()
+        res = (payee[1] + " " + payee[2]).capitalize()
+    elif transaction["transactionTypeCode"] == 714 and transaction["cardDetailsSpecified"]:  # Visa vare
+        payee = transaction["cardDetails"]["merchantName"]
         # print(transaction['text'])
         res = payee.capitalize()
-    elif transaction['transactionTypeCode'] == 714 and not transaction['cardDetailsSpecified']:
+    elif transaction["transactionTypeCode"] == 714 and not transaction["cardDetailsSpecified"]:
         # Trying to extract payee from transaction text
-        payee = transaction['text'].split(" ")
-        payee = payee [4:] # Cutting away card num, date, currency and amount
-        payee = payee [:2] # Cutting away exchange rate
-        payee = " ".join (payee) # Joining string back
+        payee = transaction["text"].split(" ")
+        payee = payee[4:]  # Cutting away card num, date, currency and amount
+        payee = payee[:2]  # Cutting away exchange rate
+        payee = " ".join(payee)  # Joining string back
         res = payee.capitalize()
-    elif transaction['transactionTypeText'] == 'STROF':
-        res = transaction['text'].capitalize()
-    elif transaction['transactionTypeCode'] == 561:   # Varekjøp
-        payee = transaction['text'].split(' ')
-        #print(transaction)
+    elif transaction["transactionTypeText"] == "STROF":
+        res = transaction["text"].capitalize()
+    elif transaction["transactionTypeCode"] == 561:  # Varekjøp
+        payee = transaction["text"].split(" ")
+        # print(transaction)
         if len(payee) < 2:
-            res = transaction['transactionType'].capitalize()
-        elif len([x for x in ['til:','fra:','betalt:'] if re.search(x, res.lower())]) > 0:
+            res = transaction["transactionType"].capitalize()
+        elif len([x for x in ["til:", "fra:", "betalt:"] if re.search(x, res.lower())]) > 0:
             # Explanation: if contains words above, then split on colons, remove last word, strip whitespace and make all words start with capital letter
-            res = string.capwords(' '.join([x for x in payee if x.lower() not in ['til:','fra:','betalt:']]))
+            res = string.capwords(" ".join([x for x in payee if x.lower() not in ["til:", "fra:", "betalt:"]]))
         else:
-            res = (payee[1]+ ' ' + payee[2]).capitalize()
+            res = (payee[1] + " " + payee[2]).capitalize()
 
-    elif transaction['transactionTypeCode'] == 200:  # Overføringe egen konto
-        if transaction['otherAccountNumberSpecified'] == True:
+    elif transaction["transactionTypeCode"] == 200:  # Overføringe egen konto
+        if transaction["otherAccountNumberSpecified"] == True:
             pprint.pprint(transaction)
-        if transaction['amount'] > 0:
-            res = 'Transfer from:'
+        if transaction["amount"] > 0:
+            res = "Transfer from:"
         else:
-            res = 'Transfer to:'
-    elif transaction['transactionTypeCode'] == 203:  # Nettgiro
-        payee = transaction['text'].split(' ')
+            res = "Transfer to:"
+    elif transaction["transactionTypeCode"] == 203:  # Nettgiro
+        payee = transaction["text"].split(" ")
         try:
-            res = (payee[2] + ' ' + payee[3]).capitalize()
+            res = (payee[2] + " " + payee[3]).capitalize()
         except IndexError:
-            raise ValueError ("Can't extract payee from nettgiro.")
-    elif transaction['transactionTypeCode'] == 15:  # Valuta
+            raise ValueError("Can't extract payee from nettgiro.")
+    elif transaction["transactionTypeCode"] == 15:  # Valuta
         try:
-            payee = list(filter(None, transaction['text'].split(' ')))  #Split text part and remove empty items from resulting array called payee
-            res = " ".join(payee[:len(payee)-2])                    # join with space the elements of payee apart from the last two (holding currency and amount)
+            payee = list(
+                filter(None, transaction["text"].split(" "))
+            )  # Split text part and remove empty items from resulting array called payee
+            res = " ".join(
+                payee[: len(payee) - 2]
+            )  # join with space the elements of payee apart from the last two (holding currency and amount)
         except IndexError:
-            raise ValueError ("Can't extract payee from nettgiro.")
+            raise ValueError("Can't extract payee from nettgiro.")
 
     # Resolve payees that end up being something like 'Nettgiro til: receipient betalt: 01.08.19'
-    if len([x for x in ['til:','fra:','betalt:'] if re.search(x, res.lower())]) > 0:
+    if len([x for x in ["til:", "fra:", "betalt:"] if re.search(x, res.lower())]) > 0:
         # Explanation: if contains words above, then split on colons, remove last word, strip whitespace and make all words start with capital letter
-        res = string.capwords(' '.join(' '.join(res.split(':')[1:-1]).split(' ')[:-1]))
-    
+        res = string.capwords(" ".join(" ".join(res.split(":")[1:-1]).split(" ")[:-1]))
+
     return res[0:50]
 
+
 def getMemo(transaction):
-    transactionId = ''
+    transactionId = ""
 
-    if transaction['cardDetailsSpecified'] == True:
-        transactionId = ' tId:'+transaction['cardDetails']['transactionId']
-    
-    isReservation = ''
-    if transaction['isReservation'] == True:
-        isReservation = 'Reserved: '
+    if transaction["cardDetailsSpecified"] == True:
+        transactionId = " tId:" + transaction["cardDetails"]["transactionId"]
 
-    transactionMemo = ''
+    isReservation = ""
+    if transaction["isReservation"] == True:
+        isReservation = "Reserved: "
 
-    if transaction['transactionTypeCode'] == 962 or transaction['transactionType'].split(' ')[0] == 'Vipps':   # Vipps straksbet.
-        transactionMemo = 'Vipps ' + transaction['text'].capitalize()
-    elif transaction['transactionTypeCode'] == 710:   # Varekjøp
-        transactionMemo = transaction['text'].split(' ',1)[1].capitalize()
-    elif transaction['transactionTypeCode'] == 714: # Visa vare
-        transactionMemo = transaction['text'].split(' ',2)[2].capitalize()
-    elif transaction['transactionTypeCode'] == 200:  # Overføringe egen konto
-        if transaction['amount'] > 0:
-            transactionMemo = 'Overføring fra annen egen konto'
+    transactionMemo = ""
+
+    if (
+        transaction["transactionTypeCode"] == 962 or transaction["transactionType"].split(" ")[0] == "Vipps"
+    ):  # Vipps straksbet.
+        transactionMemo = "Vipps " + transaction["text"].capitalize()
+    elif transaction["transactionTypeCode"] == 710:  # Varekjøp
+        transactionMemo = transaction["text"].split(" ", 1)[1].capitalize()
+    elif transaction["transactionTypeCode"] == 714:  # Visa vare
+        transactionMemo = transaction["text"].split(" ", 2)[2].capitalize()
+    elif transaction["transactionTypeCode"] == 200:  # Overføringe egen konto
+        if transaction["amount"] > 0:
+            transactionMemo = "Overføring fra annen egen konto"
         else:
-            transactionMemo = 'Overføring til annen egen konto'
-    elif transaction['transactionTypeText'] == 'STROF':
-        transactionMemo = transaction['transactionType'].capitalize()
+            transactionMemo = "Overføring til annen egen konto"
+    elif transaction["transactionTypeText"] == "STROF":
+        transactionMemo = transaction["transactionType"].capitalize()
     else:
-        transactionMemo = transaction['text'].capitalize()
- 
+        transactionMemo = transaction["text"].capitalize()
+
     return isReservation + transactionMemo + transactionId
 
+
 def getOut(transaction):
-    if transaction['amount'] < 0.0:
-        return abs(transaction['amount'])
+    if transaction["amount"] < 0.0:
+        return abs(transaction["amount"])
     else:
-        return ''
+        return ""
+
 
 def getIn(transaction):
-    if transaction['amount'] >= 0.0:
-        return transaction['amount']
+    if transaction["amount"] >= 0.0:
+        return transaction["amount"]
     else:
-        return ''
+        return ""
+
 
 def getIntAmountMilli(transaction):
-    return int(transaction['amount'] * 1000)
+    return int(transaction["amount"] * 1000)
+
 
 def getYnabSyncId(transaction):
-    return "YNAB:"+str(getIntAmountMilli(transaction))+":"+getYnabTransactionDate(transaction)+":"+"1"
+    return "YNAB:" + str(getIntAmountMilli(transaction)) + ":" + getYnabTransactionDate(transaction) + ":" + "1"
+
 
 def getPaymentsDate(payment):
-    d = datetime.datetime.strptime(payment['dueDate'].split('T')[0], "%Y-%m-%d")
-    return d.strftime('%d.%m.%Y')
-
+    d = datetime.datetime.strptime(payment["dueDate"].split("T")[0], "%Y-%m-%d")
+    return d.strftime("%d.%m.%Y")
