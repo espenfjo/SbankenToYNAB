@@ -2,7 +2,6 @@ from oauthlib.oauth2 import BackendApplicationClient
 import requests
 from requests_oauthlib import OAuth2Session
 import urllib.parse
-import csv
 import datetime
 import pprint
 import string
@@ -317,7 +316,7 @@ def getPayee(transaction):
         res = "Sbanken"
     elif transaction["transactionTypeCode"] == 962 or (
         transaction["transactionType"].split(" ")[0] == "Vipps"
-        and transaction.get("otherAccountNumberSpecified") == False
+        and transaction.get("otherAccountNumberSpecified") is False
     ):  # Vipps straksbet.
         res = transaction["transactionType"]
     elif transaction["transactionTypeCode"] == 709 or transaction["transactionTypeCode"] == 73:  # Varer
@@ -359,7 +358,7 @@ def getPayee(transaction):
             res = (payee[1] + " " + payee[2]).capitalize()
 
     elif transaction["transactionTypeCode"] == 200:  # Overføringe egen konto
-        if transaction["otherAccountNumberSpecified"] == True:
+        if transaction["otherAccountNumberSpecified"] is True:
             pprint.pprint(transaction)
         if transaction["amount"] > 0:
             res = "Transfer from:"
@@ -393,11 +392,11 @@ def getPayee(transaction):
 def getMemo(transaction):
     transactionId = ""
 
-    if transaction["cardDetailsSpecified"] == True:
+    if transaction["cardDetailsSpecified"] is True:
         transactionId = " tId:" + transaction["cardDetails"]["transactionId"]
 
     isReservation = ""
-    if transaction["isReservation"] == True:
+    if transaction["isReservation"] is True:
         isReservation = "Reserved: "
 
     transactionMemo = ""

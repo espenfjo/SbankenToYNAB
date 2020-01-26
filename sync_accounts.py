@@ -1,19 +1,12 @@
 from __future__ import print_function
-import time
 import ynab
 import api_settings
 import datetime
 from ynab.rest import ApiException
-from pprint import pprint
 from Helpers import (
     create_authenticated_http_session,
-    get_accounts,
-    get_transactions,
-    getTransactionDate,
     getPayee,
     getMemo,
-    getOut,
-    getIn,
     getIntAmountMilli,
     getYnabTransactionDate,
     get_transactions_period,
@@ -95,11 +88,8 @@ for account_idx in range(len(accounts)):
     # Loop through all transactions
     for transaction_item in transactions:
         payee_id = None
-        if api_settings.includeReservedTransactions != True:
-            if (
-                transaction_item.get("isReservation") == True
-                or transaction_item.get("otherAccountNumberSpecified") == False
-            ):
+        if not api_settings.includeReservedTransactions:
+            if transaction_item.get("isReservation") is True or transaction_item.get("otherAccountNumberSpecified") is False:
                 continue
 
         try:
@@ -120,16 +110,16 @@ for account_idx in range(len(accounts)):
 
         ynab_transaction.payee_name = payee_name
 
-        if "transactionFlagColor" in vars(api_settings) and api_settings.transactionFlagColor != None:
+        if "transactionFlagColor" in vars(api_settings) and api_settings.transactionFlagColor:
             ynab_transaction.flag_color = api_settings.transactionFlagColor
 
         if (
             "reservedFlagColor" in vars(api_settings)
-            and api_settings.reservedFlagColor != None
+            and api_settings.reservedFlagColor
             and (
-                transaction_item.get("isReservation") == True
+                transaction_item.get("isReservation") is True
                 or (
-                    transaction_item.get("otherAccountNumberSpecified") == False
+                    transaction_item.get("otherAccountNumberSpecified") is False
                     and transaction_item.get("source") != "Archive"
                 )
             )
@@ -148,7 +138,7 @@ for account_idx in range(len(accounts)):
             payee = findMatchingTransfer(
                 account_map["ID"], transaction_item, accounts, api_settings.mapping, ynab_accounts
             )
-            if payee != None:
+            if payee:
                 if "payee_id" in payee:
                     ynab_transaction.payee_id = payee["payee_id"]
                     ynab_transaction.payee_name = None
